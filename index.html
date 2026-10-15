@@ -148,7 +148,7 @@ button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
   <div class="stats">
     <div class="stat"><div class="eyebrow">Pts</div><div class="led" id="pts">00</div></div>
     <div class="stat"><div class="eyebrow">FG%</div><div class="led" id="fg">--</div></div>
-    <div class="stat"><div class="eyebrow">Notes</div><div class="led" id="notesCount">0/8</div></div>
+    <div class="stat"><div class="eyebrow">Notes</div><div class="led" id="notesCount">0/5</div></div>
     <button class="icon-btn" id="notesBtn" aria-label="Show or hide notes" aria-pressed="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
     </button>
@@ -227,14 +227,11 @@ button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
 const PLAYER = 'JinKang';
 const JERSEY = '8';
 const NOTES = [
-  { from: 'The whole team', text: 'You made every Monday feel less like a Monday. The office gets quieter tomorrow.' },
-  { from: 'Your lunch crew', text: "Who's going to pick the place now? We'll just stand at the lift arguing." },
-  { from: 'Everyone you stayed late to help', text: 'You always said "one minute" and stayed an hour. Thank you for every one of those hours.' },
-  { from: 'The group chat', text: 'Leaving the company is fine. Leaving the group chat is not allowed.' },
-  { from: 'The pickup game regulars', text: 'Same court, same time. Your spot on the team stays open.' },
-  { from: 'The people who sat next to you', text: 'Your desk is going to look very empty. Come back and visit, and bring snacks.' },
-  { from: 'Your future fans', text: "Whatever comes next, we'll be cheering from the sidelines." },
-  { from: 'All of us', text: 'Thanks for every assist. Go win the next game.' },
+  { from: 'The team', text: 'Take rest when you need to.' },
+  { from: 'Adam', text: 'Make sure your workload matches your salary.' },
+  { from: 'Wei Choon', text: "Don't limit yourself. Trust the process." },
+  { from: 'Ray', text: 'Go do what you want. All the best, and may the force be with you.' },
+  { from: 'All of us', text: 'Win a bigger game on the next court.' },
 ];
 /* ------------------------------------------------------------------------ */
 
