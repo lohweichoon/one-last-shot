@@ -71,6 +71,14 @@ button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
 .cam .frame { position: relative; aspect-ratio: 4 / 3; }
 .cam video, .cam canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cam video { transform: scaleX(-1); opacity: .65; }
+.cpow { display: grid; grid-template-columns: auto minmax(0, 1fr) 38px; gap: 8px; align-items: center; padding: 8px 10px 2px; background: var(--panel); }
+.cbar { position: relative; height: 14px; border-radius: 7px; background: #1a2134; overflow: hidden; }
+.czone { position: absolute; top: 0; bottom: 0; background: rgba(70, 196, 134, .3); border-inline: 2px solid var(--good); }
+.cfill { position: absolute; left: 0; top: 3px; bottom: 3px; width: 0; border-radius: 4px; background: var(--led); }
+.cpow.good .cfill { background: var(--good); }
+.cpeak { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1px; background: #fff; opacity: 0; transition: opacity .2s; }
+.cval { font: 14px/1 var(--f-led); color: var(--led); text-align: right; font-variant-numeric: tabular-nums; }
+.cpow.good .cval { color: var(--good); }
 .cam .status { padding: 6px 10px; font-size: 12px; line-height: 1.35; background: var(--panel); }
 .cam .status b { color: var(--led); font-weight: 600; }
 .cam .row-btns { display: flex; gap: 6px; padding: 0 10px 8px; background: var(--panel); }
@@ -174,6 +182,7 @@ button:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
 
 <div class="cam" id="cam" hidden>
   <div class="frame"><video id="video" playsinline muted></video><canvas id="skel"></canvas></div>
+  <div class="cpow" id="cpow"><span class="eyebrow">Power</span><div class="cbar"><div class="czone" id="czone"></div><div class="cfill" id="cfill"></div><div class="cpeak" id="cpeak"></div></div><span class="cval" id="cval">--</span></div>
   <div class="status" id="camStatus">Looking for you…</div>
   <div class="row-btns"><button class="mini" id="recal">Reset position</button><button class="mini" id="toKeys">Use keys instead</button></div>
 </div>
@@ -693,6 +702,11 @@ function detect(now) {
   const wy = ws.reduce((a, w) => a + w.y, 0) / ws.length, wx = ws.reduce((a, w) => a + w.x, 0) / ws.length;
   track.hist.push({ t: now, y: wy });
   while (track.hist.length && now - track.hist[0].t > 260) track.hist.shift();
+  // live power meter: follows hand speed while set, then eases back down
+  const hl = track.hist.length;
+  const inst = hl >= 2 ? (track.hist[hl - 2].y - track.hist[hl - 1].y) / sw / Math.max(0.001, (track.hist[hl - 1].t - track.hist[hl - 2].t) / 1000) / 5.5 : 0;
+  track.live = phase === 'set' ? Math.max(inst, (track.live || 0) * 0.8) : (track.live || 0) * 0.85;
+  showPower(track.live, false);
   const nearFace = wy < sy + sw * 0.35 && wy > nose.y - sw * 0.55;
   const together = ws.length < 2 || Math.abs(lw.x - rw.x) < sw * 1.3;
   const overHead = wy < nose.y - sw * 0.6;
@@ -711,10 +725,27 @@ function detect(now) {
       const power = clamp(vmax / 5.5, 0.3, 2);
       const aim = clamp((wx - cx) / sw * 1.2, -1.5, 1.5);
       track.cool = now + 1500;
+      showPower(power, true);
       release(power, aim);
       camStatus(`Shot power <b>${Math.round(power * 100)}%</b>`);
     } else if (wy > sy + sw * 0.6) { phase = 'dribble'; }
   }
+}
+
+// power 0..2 maps across the bar; 1.0 (perfect) sits in the middle of the green zone
+let peakUntil = 0;
+function showPower(p, isShot) {
+  const tol = 0.3 * (1 + S.misses * 0.5), now = performance.now();
+  if (isShot) {
+    const pk = $('#cpeak'); pk.style.left = clamp(p / 2, 0, 1) * 100 + '%'; pk.style.opacity = 1;
+    $('#cval').textContent = Math.round(p * 100) + '%';
+    $('#cpow').classList.toggle('good', Math.abs(p - 1) <= tol);
+    peakUntil = now + 1800;
+  } else if (now > peakUntil) {
+    $('#cval').textContent = p > 0.05 ? Math.round(p * 100) + '%' : '--';
+    $('#cpow').classList.toggle('good', Math.abs(p - 1) <= tol);
+  }
+  $('#cfill').style.width = clamp(p / 2, 0, 1) * 100 + '%';
 }
 
 function camStatus(html) { const el = $('#camStatus'); if (el.innerHTML !== html) el.innerHTML = html; }
@@ -867,7 +898,10 @@ function updateBoard() {
   $('#pts').textContent = String(S.pts).padStart(2, '0');
   $('#fg').textContent = S.shots ? Math.round(S.made / S.shots * 100) : '--';
   $('#notesCount').textContent = `${S.opened}/${N}`;
-  layoutMeter(0.3 * (1 + S.misses * 0.5));
+  const tol = 0.3 * (1 + S.misses * 0.5);
+  layoutMeter(tol);
+  const lo = clamp((1 - tol) / 2, 0, 1), hi = clamp((1 + tol) / 2, 0, 1);
+  $('#czone').style.left = lo * 100 + '%'; $('#czone').style.width = (hi - lo) * 100 + '%';
 }
 
 const tickSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
